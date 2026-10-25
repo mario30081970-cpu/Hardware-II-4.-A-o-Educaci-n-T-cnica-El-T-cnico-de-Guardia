@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<meta name="color-scheme" content="dark">
+<title>Simulador de Diagnóstico e Infraestructura de Redes — El Técnico de Guardia</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --bg2:#111c33;
+    --panel:#16233d;
+    --panel2:#1b2b48;
+    --line:#24354f;
+    --green:#22c884;
+    --green-d:#15a26a;
+    --blue:#38bdf8;
+    --amber:#f59e0b;
+    --red:#f43f5e;
+    --txt:#e2e8f0;
+    --muted:#94a3b8;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:
+      radial-gradient(circle at 15% -5%, #1b2b48 0%, rgba(15,23,42,0) 55%),
+      radial-gradient(circle at 95% 5%, #13314a 0%, rgba(15,23,42,0) 45%);
+    background-attachment:fixed;
+    color:var(--txt);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    padding-bottom:48px;
+    overflow-x:hidden;
+  }
+
+  /* ---------- HEADER ---------- */
+  .hero{
+    position:relative;
+    padding:26px 16px 22px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(34,200,132,.10), rgba(56,189,248,.05) 60%, transparent);
+  }
+  .hero::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-1px; height:2px;
+    background:linear-gradient(90deg, transparent, var(--green), var(--blue), transparent);
+    opacity:.7;
+  }
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    font-weight:800;
+    color:var(--green);
+    border:1px solid rgba(34,200,132,.45);
+    background:rgba(34,200,132,.08);
+    padding:5px 12px;
+    border-radius:999px;
+    margin-bottom:12px;
+  }
+  .hero h1{
+    margin:0 0 6px;
+    font-size:26px;
+    line-height:1.15;
+    letter-spacing:-.02em;
+    background:linear-gradient(120deg,#ffffff,#8ee9c3 45%,#7dd3fc);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    font-weight:900;
+  }
+  .hero p{
+    margin:0;
+    color:var(--muted);
+    font-size:13.5px;
+  }
+
+  /* ---------- CARDS ---------- */
+  .card{
+    background:linear-gradient(180deg, var(--panel), var(--bg2));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    margin:16px 12px;
+    box-shadow:0 10px 26px rgba(0,0,0,.38);
+    transition:opacity .3s, filter .3s;
+  }
+  .card h2{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 6px;
+    font-size:17px;
+    letter-spacing:-.01em;
+  }
+  .card h2 .num{
+    flex:0 0 auto;
+    width:30px; height:30px;
+    display:grid; place-items:center;
+    border-radius:9px;
+    font-size:14px;
+    font-weight:900;
+    color:#06281a;
+    background:linear-gradient(135deg,var(--green),var(--blue));
+  }
+  .card-sub{
+    margin:0 0 14px;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  /* ---------- LOCK ---------- */
+  .locked{
+    opacity:.42;
+    filter:grayscale(.55);
+    pointer-events:none;
+    user-select:none;
+  }
+  .lock-tag{
+    display:none;
+    float:right;
+    font-size:11px;
+    font-weight:800;
+    color:var(--amber);
+    border:1px solid rgba(245,158,11,.45);
+    background:rgba(245,158,11,.1);
+    padding:3px 9px;
+    border-radius:999px;
+  }
+  .locked .lock-tag{display:inline-block;}
+
+  /* ---------- FORM ---------- */
+  .field{margin-bottom:13px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    min-height:50px;
+    padding:13px 14px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0b1526;
+    color:var(--txt);
+    font-size:16px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field input:focus{
+    border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(34,200,132,.18);
+  }
+  .field input::placeholder{color:#4d6079;}
+
+  /* ---------- BUTTONS ---------- */
+  .btn{
+    display:block;
+    width:100%;
+    min-height:50px;
+    padding:13px 15px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--panel2);
+    color:var(--txt);
+    font-family:inherit;
+    font-size:15px;
+    font-weight:600;
+    line-height:1.35;
+    text-align:left;
+    cursor:pointer;
+    transition:transform .12s, background .15s, border-color .15s, opacity .2s;
+  }
+  .btn:active{transform:scale(.985);}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .btn-primary{
+    text-align:center;
+    font-weight:800;
+    letter-spacing:.02em;
+    color:#04241a;
+    border:none;
+    background:linear-gradient(135deg,var(--green),var(--green-d));
+    box-shadow:0 6px 18px rgba(34,200,132,.28);
+  }
+  .btn-primary:disabled{
+    background:#22334d;
+    color:#6b7f99;
+    box-shadow:none;
+  }
+  .btn-exec{
+    font-family:var(--mono);
+    font-size:14px;
+    border-color:rgba(56,189,248,.4);
+    background:rgba(56,189,248,.09);
+    color:#bfe9ff;
+  }
+  .btn-opt{
+    margin-bottom:9px;
+    font-size:14.5px;
+    font-weight:500;
+  }
+  .btn-opt.ok{
+    border-color:var(--green);
+    background:rgba(34,200,132,.16);
+    color:#b6f5d8;
+    font-weight:700;
+  }
+  .btn-opt.bad{
+    border-color:var(--red);
+    background:rgba(244,63,94,.13);
+    color:#ffc4cf;
+    text-decoration:line-through;
+    opacity:.85;
+  }
+
+  /* ---------- CASOS / PASOS ---------- */
+  .caso, .paso{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:rgba(11,21,38,.55);
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .caso.ok{ border-color:rgba(34,200,132,.55); }
+  .paso.ok{ border-color:rgba(34,200,132,.55); }
+
+  .tag{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:900;
+    letter-spacing:.13em;
+    color:var(--blue);
+    background:rgba(56,189,248,.12);
+    border:1px solid rgba(56,189,248,.35);
+    padding:3px 9px;
+    border-radius:6px;
+    margin-bottom:9px;
+  }
+  .caso-txt{
+    margin:0 0 12px;
+    font-size:14.5px;
+    color:#cbd5e1;
+  }
+
+  .paso-head{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+    margin-bottom:12px;
+  }
+  .paso-num{
+    flex:0 0 auto;
+    width:30px; height:30px;
+    display:grid; place-items:center;
+    border-radius:9px;
+    font-family:var(--mono);
+    font-weight:900;
+    font-size:14px;
+    color:#04241a;
+    background:linear-gradient(135deg,var(--blue),var(--green));
+  }
+  .paso-t h4{
+    margin:0 0 2px;
+    font-size:14.5px;
+    color:#e8f4ff;
+  }
+  .paso-t p{
+    margin:0;
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.4;
+  }
+
+  /* ---------- TERMINAL ---------- */
+  .term{
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.5;
+    background:#050b16;
+    color:#7ee7b0;
+    border:1px solid #1d3b2e;
+    border-radius:10px;
+    padding:12px;
+    margin:11px 0 0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    overflow-x:auto;
+    box-shadow:inset 0 0 22px rgba(34,200,132,.07);
+    animation:fadeIn .25s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:none;} }
+
+  /* ---------- PREGUNTAS / FEEDBACK ---------- */
+  .pregunta{margin-top:12px; animation:fadeIn .25s ease;}
+  .q{
+    margin:0 0 10px;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--blue);
+  }
+  .fb{
+    display:none;
+    margin-top:8px;
+    font-size:13px;
+    line-height:1.45;
+    border-radius:10px;
+    padding:11px 12px;
+    animation:fadeIn .2s ease;
+  }
+  .fb.ok{
+    display:block;
+    color:#b6f5d8;
+    background:rgba(34,200,132,.1);
+    border:1px solid rgba(34,200,132,.4);
+  }
+  .fb.bad{
+    display:block;
+    color:#ffc9d3;
+    background:rgba(244,63,94,.1);
+    border:1px solid rgba(244,63,94,.4);
+  }
+
+  /* ---------- TEXTAREA ---------- */
+  textarea{
+    width:100%;
+    min-height:170px;
+    padding:13px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:#0b1526;
+    color:var(--txt);
+    font-family:inherit;
+    font-size:15px;
+    line-height:1.55;
+    resize:vertical;
+    outline:none;
+  }
+  textarea:focus{
+    border-color:var(--green);
+    box-shadow:0 0 0 3px rgba(34,200,132,.15);
+  }
+  .wc-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin:10px 0 14px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .wc-pill{
+    font-family:var(--mono);
+    padding:5px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:#0b1526;
+    transition:.2s;
+  }
+  .wc-pill.ok{
+    color:#b6f5d8;
+    border-color:rgba(34,200,132,.55);
+    background:rgba(34,200,132,.12);
+  }
+  .wc-pill.bad{
+    color:#ffc9d3;
+    border-color:rgba(244,63,94,.5);
+    background:rgba(244,63,94,.1);
+  }
+
+  /* ---------- CHECKLIST ---------- */
+  .check{
+    list-style:none;
+    margin:0 0 16px;
+    padding:0;
+    font-size:13.5px;
+  }
+  .check li{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:7px 0;
+    color:var(--muted);
+    border-bottom:1px dashed rgba(36,53,79,.7);
+  }
+  .check li:last-child{border-bottom:none;}
+  .check li .st{
+    flex:0 0 auto;
+    width:20px; height:20px;
+    display:grid; place-items:center;
+    border-radius:50%;
+    font-size:11px;
+    font-weight:900;
+    border:1px solid var(--line);
+    color:#5d7characters;
+  }
+  .check li .st.no{ color:#7b8ea8; border-color:#2c405c; background:#0d1829; }
+  .check li .st.si{ color:#04241a; border-color:transparent; background:var(--green); }
+  .check li.done{ color:#b6f5d8; }
+
+  /* ---------- TERMINAL HEADER BAR ---------- */
+  .term-bar{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:#4f7a65;
+    margin-bottom:8px;
+    letter-spacing:.06em;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.r{background:#f45b6e;} .dot.y{background:#f5c04a;} .dot.g{background:#3ddc84;}
+
+  .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 12px;
+  }
+  .ctx{
+    font-size:13px;
+    color:#a9bdd6;
+    background:rgba(56,189,248,.07);
+    border-left:3px solid var(--blue);
+    border-radius:0 8px 8px 0;
+    padding:10px 12px;
+    margin:0 0 14px;
+  }
+
+  footer{
+    text-align:center;
+    font-size:11.5px;
+    color:#4a5d78;
+    padding:26px 20px 10px;
+    line-height:1.6;
+  }
+  footer strong{color:#6f86a3;}
+
+  @media (min-width:640px){
+    .card{margin:18px auto; max-width:720px;}
+    .hero h1{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <span class="badge">Hardware II · 4.º Año · Educación Técnica</span>
+  <h1>El Técnico de Guardia</h1>
+  <p>Simulador de Diagnóstico e Infraestructura de Redes</p>
+</header>
+
+<main>
+
+  <!-- ============ 0. IDENTIFICACIÓN ============ -->
+  <section class="card" id="secIdent">
+    <h2><span class="num">0</span> Identificación del Técnico</h2>
+    <p class="card-sub">Completá tus datos antes de iniciar la guardia. Quedarán registrados en el informe final descargable.</p>
+
+    <div class="field">
+      <label for="inNombre">Nombre y Apellido</label>
+      <input id="inNombre" type="text" placeholder="Ej.: Ana Gómez" autocomplete="name" maxlength="60">
+    </div>
+
+    <div class="field">
+      <label for="inCurso">Curso y División</label>
+      <input id="inCurso" type="text" placeholder="Ej.: 4.º Año — División A" maxlength="40">
+    </div>
+
+    <div class="field">
+      <label for="inMateria">Materia</label>
+      <input id="inMateria" type="text" value="Hardware II" maxlength="40">
+    </div>
+
+    <div class="fb bad" id="fbIdent">⚠️ Completá Nombre y Apellido (mínimo 3 caracteres) y Curso y División.</div>
+
+    <button class="btn btn-primary" id="btnComenzar" type="button">▶ Iniciar Práctica de Laboratorio</button>
+  </section>
+
+  <!-- ============ MISIÓN 1 ============ -->
+  <section class="card locked" id="secM1">
+    <h2><span class="num">1</span> Misión 1 · Medios Físicos <span class="lock-tag">🔒 Bloqueado</span></h2>
+    <p class="card-sub">Capa 1 del modelo OSI. Para cada escenario, seleccioná el medio de transmisión correcto. La validación es inmediata y con fundamento técnico.</p>
+    <div id="m1casos"></div>
+    <div class="fb ok" id="fbM1">✅ Misión 1 completada. Se desbloqueó la Misión 2.</div>
+  </section>
+
+  <!-- ============ MISIÓN 2 ============ -->
+  <section class="card locked" id="secM2">
+    <h2><span class="num">2</span> Misión 2 · Diagnóstico en 4 Pasos <span class="lock-tag">🔒 Bloqueado</span></h2>
+    <p class="card-sub">Ticket de avería: <strong style="color:#ffc9d3;">«PC local sin salida a Internet»</strong>. Seguí el modelo OSI de abajo hacia arriba: Físico → Enlace → Red.</p>
+
+    <div class="ctx" id="m2Contexto"></div>
+
+    <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span> &nbsp;consola-de-diagnostico — bash</div>
+
+    <div id="m2pasos"></div>
+    <div class="fb ok" id="fbM2">✅ Secuencia de diagnóstico completada. Se desbloqueó el informe técnico.</div>
+  </section>
+
+  <!-- ============ INFORME ============ -->
+  <section class="card locked" id="secInforme">
+    <h2><span class="num">3</span> Informe Técnico y Entrega <span class="lock-tag">🔒 Bloqueado</span></h2>
+    <p class="card-sub">Redactá tu diagnóstico y la solución aplicada. Para habilitar la descarga necesitás <strong style="color:var(--green)">mínimo 20 palabras</strong> y haber completado las dos misiones.</p>
+
+    <ul class="check">
+      <li id="ck1"><span class="st no">✕</span> Misión 1 · Selección de medios físicos</li>
+      <li id="ck2"><span class="st no">✕</span> Misión 2 · Diagnóstico en 4 pasos</li>
+      <li id="ck3"><span class="st no">✕</span> Informe redactado (≥ 20 palabras)</li>
+    </ul>
+
+    <div class="field">
+      <label for="txtInforme">Informe de Diagnóstico Técnico y Solución Aplicada</label>
+      <textarea id="txtInforme" placeholder="Ej.: Tras revisar los LEDs del puerto comprobé que no había enlace físico. Al ejecutar ipconfig observé una dirección APIPA (169.254.x.x), lo que confirma que el equipo no obtuvo IP del DHCP. Concluyo que la falla se encuentra en la Capa 1..."></textarea>
+    </div>
+
+    <div class="wc-row">
+      <span>Contador de redacción</span>
+      <span class="wc-pill bad" id="wcPill">0 / 20 palabras</span>
+    </div>
+
+    <button class="btn btn-primary" id="btnDescargar" type="button" disabled>⬇ Descargar Informe para Classroom (.doc)</button>
+    <p class="hint" style="margin-top:12px; margin-bottom:0;">El archivo se genera en tu propio dispositivo (sin servidores) y se abre con Word, Google Docs o WPS Office.</p>
+  </section>
+
+</main>
+
+<footer>
+  <strong>HARDWARE II</strong> · Práctica de Laboratorio N.º 16<br>
+  Redes Locales y Conectividad — Medios de transmisión, dispositivos activos y metodología de diagnóstico.
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =========================================================
+     UTILIDADES
+  ========================================================= */
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.prototype.slice.call(r.querySelectorAll(s));
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function contarPalabras(t) {
+    const limpio = String(t).trim();
+    if (!limpio) return 0;
+    return limpio.split(/\s+/).filter(function (w) { return w.length > 0; }).length;
+  }
+
+  /* =========================================================
+     ESTADO GLOBAL
+  ========================================================= */
+  const state = {
+    alumno: { nombre: "", curso: "", materia: "Hardware II", inicio: null },
+    m1: { orden: [], resultados: [], completa: false },
+    m2: { escenario: null, pasos: [], completa: false },
+    informe: ""
+  };
+
+  /* =========================================================
+     DATOS · MISIÓN 1
+  ========================================================= */
+  const CASOS_M1 = [
+    {
+      id: "c1",
+      escenario: "Conectar 20 puestos de trabajo fijos dentro de una oficina estándar. Las distancias no superan los 60 m y el presupuesto es ajustado.",
+      opciones: [
+        { t: "Cobre Cat 6 / 6A (UTP)", ok: true,
+          fb: "Correcto. El cobre Cat 6 alcanza 1 Gbps y Cat 6A hasta 10 Gbps con un límite de 100 m. Es económico, se crimpa con RJ45 y es compatible con cualquier NIC de escritorio." },
+        { t: "Fibra Óptica Monomodo", ok: false,
+          fb: "Sobredimensionado y caro. La monomodo está pensada para enlaces kilométricos y exige transceptores ópticos (SFP) en cada extremo. No se justifica dentro de una oficina." },
+        { t: "Wi-Fi 6E", ok: false,
+          fb: "Innecesario para puestos fijos: el cable es más estable, seguro y barato. Además, 20 equipos compitiendo por el aire degradan la latencia." },
+        { t: "Cable UTP Cat 3", ok: false,
+          fb: "Obsoleto. Cat 3 solo soporta 10 Mbps y no cumple los estándares actuales de red local." }
+      ]
+    },
+    {
+      id: "c2",
+      escenario: "Enlazar dos sucursales separadas por 2 kilómetros, con el tendido a la intemperie.",
+      opciones: [
+        { t: "Fibra Óptica Monomodo", ok: true,
+          fb: "Correcto. Núcleo ultradelgado (~9 µm), atenuación mínima y alcance de kilómetros. La fibra es inmune a la interferencia electromagnética, a la humedad y a las descargas atmosféricas." },
+        { t: "Fibra Óptica Multimodo", ok: false,
+          fb: "La multimodo está limitada a cientos de metros (300–550 m en 10 Gbps). A 2 km la dispersión modal degrada la señal hasta hacerla inutilizable." },
+        { t: "Cobre Cat 6A", ok: false,
+          fb: "El cobre tiene un límite físico de 100 m. A 2 km la atenuación impide cualquier comunicación, además de ser vulnerable a EMI y sobretensiones." },
+        { t: "Wi-Fi 6 con antenas direccionales", ok: false,
+          fb: "Un enlace inalámbrico punto a punto a 2 km es frágil: depende de línea de vista, clima y regulación del espectro. No es infraestructura confiable." }
+      ]
+    },
+    {
+      id: "c3",
+      escenario: "Conectar el backbone (columna vertebral) entre dos pisos del mismo edificio.",
+      opciones: [
+        { t: "Fibra Óptica Multimodo", ok: true,
+          fb: "Correcto. Ofrece alto ancho de banda con electrónica más económica que la monomodo (LED/VCSEL). Es la opción balanceada para distancias cortas e intermedias dentro de un edificio o datacenter." },
+        { t: "Fibra Óptica Monomodo", ok: false,
+          fb: "Funcionaría, pero es más cara de lo necesario (óptica y transceptores). La monomodo se reserva para distancias kilométricas." },
+        { t: "Cobre Cat 6", ok: false,
+          fb: "El backbone debe soportar la agregación de tráfico de todo un piso. Cat 6 se limita a 1 Gbps en 100 m y no ofrece el ancho de banda ni la inmunidad de la fibra." },
+        { t: "Wi-Fi 6 en malla", ok: false,
+          fb: "El backbone nunca debe depender del aire: se necesita un enlace fijo, dedicado y de alta capacidad." }
+      ]
+    },
+    {
+      id: "c4",
+      escenario: "Aula interactiva móvil con 40 tablets conectadas simultáneamente, sin posibilidad de cableado.",
+      opciones: [
+        { t: "Wi-Fi 6 / 6E (802.11ax)", ok: true,
+          fb: "Correcto. OFDMA y MU-MIMO permiten atender muchos dispositivos simultáneos con baja latencia; la banda de 6 GHz de Wi-Fi 6E evita la congestión del espectro." },
+        { t: "Cobre Cat 6A", ok: false,
+          fb: "Inviable: las tablets no tienen puerto RJ45 y un aula móvil no puede depender de cableado fijo." },
+        { t: "Fibra Óptica Multimodo", ok: false,
+          fb: "La fibra es para el backbone del edificio, no para conectar clientes finales móviles." },
+        { t: "Wi-Fi 4 (802.11n)", ok: false,
+          fb: "Obsoleto para alta densidad: con 40 clientes el canal de 2,4 GHz se satura y la latencia se dispara." }
+      ]
+    }
+  ];
+
+  /* =========================================================
+     DATOS · MISIÓN 2
+  ========================================================= */
+  const ESCENARIOS_M2 = [
+    {
+      id: "A",
+      contexto: "El usuario informa que ayer movió el escritorio y desde entonces no tiene Internet. El equipo enciende normalmente.",
+      ledsOk: false,
+      ip: "169.254.18.7",
+      mask: "255.255.0.0",
+      gateway: "",
+      gwPing: false,
+      wanPing: false
+    },
+    {
+      id: "B",
+      contexto: "Los LEDs del switch y del PC están encendidos. Otros dos equipos conectados al mismo switch tampoco tienen Internet.",
+      ledsOk: true,
+      ip: "169.254.112.34",
+      mask: "255.255.0.0",
+      gateway: "",
+      gwPing: false,
+      wanPing: false
+    },
+    {
+      id: "C",
+      contexto: "El equipo obtuvo una dirección IP válida, pero no navega. El router del gabinete estuvo reiniciándose durante la mañana.",
+      ledsOk: true,
+      ip: "192.168.1.87",
+      mask: "255.255.255.0",
+      gateway: "192.168.1.1",
+      gwPing: false,
+      wanPing: false
+    },
+    {
+      id: "D",
+      contexto: "El usuario puede abrir sitios si escribe la dirección IP, pero ningún nombre de dominio funciona.",
+      ledsOk: true,
+      ip: "192.168.1.87",
+      mask: "255.255.255.0",
+      gateway: "192.168.1.1",
+      gwPing: true,
+      wanPing: true
+    }
+  ];
+
+  function getPasos(sc) {
+    const ledsOk  = sc.ledsOk;
+    const apipa   = sc.ip.indexOf("169.254") === 0;
+    const gwOk    = sc.gwPing;
+    const wanOk   = sc.wanPing;
+
+    /* --- Salidas simuladas --- */
+    const salidaLeds = ledsOk
+      ? "> Estado del adaptador Ethernet (eth0)\n" +
+        "  LED LINK  : VERDE FIJO\n" +
+        "  LED ACT   : PARPADEANDO (tráfico detectado)\n" +
+        "  Velocidad : 1000 Mbps FULL DUPLEX"
+      : "> Estado del adaptador Ethernet (eth0)\n" +
+        "  LED LINK  : APAGADO\n" +
+        "  LED ACT   : APAGADO\n" +
+        "  Velocidad : SIN ENLACE";
+
+    const salidaIp = "> ipconfig /all\n\n" +
+      "Adaptador Ethernet Ethernet0:\n" +
+      "  Sufijo DNS específico . . : lan.local\n" +
+      "  DHCP habilitado . . . . . : Sí\n" +
+      "  Dirección IPv4. . . . . . : " + sc.ip + "\n" +
+      "  Máscara de subred . . . . : " + sc.mask + "\n" +
+      "  Puerta de enlace . . . . : " + (sc.gateway || "(sin configurar)");
+
+    let salidaGw;
+    if (!sc.gateway) {
+      salidaGw = "> ping 192.168.1.1\n\n" +
+        "La puerta de enlace predeterminada no está configurada.\n" +
+        "No se puede resolver el host de destino.\n\n" +
+        "Estadísticas de ping:\n" +
+        "    Paquetes: enviados = 4, recibidos = 0, perdidos = 4 (100% pérdida)";
+    } else if (gwOk) {
+      salidaGw = "> ping 192.168.1.1\n\n" +
+        "Haciendo ping a 192.168.1.1 con 32 bytes de datos:\n" +
+        "Respuesta desde 192.168.1.1: bytes=32 tiempo=1ms TTL=64\n" +
+        "Respuesta desde 192.168.1.1: bytes=32 tiempo=1ms TTL=64\n" +
+        "Respuesta desde 192.168.1.1: bytes=32 tiempo<1ms TTL=64\n" +
+        "Respuesta desde 192.168.1.1: bytes=32 tiempo=2ms TTL=64\n\n" +
+        "Estadísticas de ping:\n" +
+        "    Paquetes: enviados = 4, recibidos = 4, perdidos = 0 (0% pérdida)";
+    } else {
+      salidaGw = "> ping 192.168.1.1\n\n" +
+        "Haciendo ping a 192.168.1.1 con 32 bytes de datos:\n" +
+        "Respuesta desde " + sc.ip + ": Host de destino inaccesible.\n" +
+        "Respuesta desde " + sc.ip + ": Host de destino inaccesible.\n" +
+        "Respuesta desde " + sc.ip + ": Host de destino inaccesible.\n" +
+        "Respuesta desde " + sc.ip + ": Host de destino inaccesible.\n\n" +
+        "Estadísticas de ping:\n" +
+        "    Paquetes: enviados = 4, recibidos = 0, perdidos = 4 (100% pérdida)";
+    }
+
+    const salidaWan = wanOk
+      ? "> ping 8.8.8.8\n\n" +
+        "Haciendo ping a 8.8.8.8 con 32 bytes de datos:\n" +
+        "Respuesta desde 8.8.8.8: bytes=32 tiempo=14ms TTL=117\n" +
+        "Respuesta desde 8.8.8.8: bytes=32 tiempo=13ms TTL=117\n" +
+        "Respuesta desde 8.8.8.8: bytes=32 tiempo=15ms TTL=117\n" +
+        "Respuesta desde 8.8.8.8: bytes=32 tiempo=14ms TTL=117\n\n" +
+        "Estadísticas de ping:\n" +
+        "    Paquetes: enviados = 4, recibidos = 4, perdidos = 0 (0% pérdida)"
+      : "> ping 8.8.8.8\n\n" +
+        "Haciendo ping a 8.8.8.8 con 32 bytes de datos:\n" +
+        "Tiempo de espera agotado para esta solicitud.\n" +
+        "Tiempo de espera agotado para esta solicitud.\n" +
+        "Tiempo de espera agotado para esta solicitud.\n" +
+        "Tiempo de espera agotado para esta solicitud.\n\n" +
+        "Estadísticas de ping:\n" +
+        "    Paquetes: enviados = 4, recibidos = 0, perdidos = 4 (100% pérdida)";
+
+    return [
+      {
+        titulo: "Capa Física · Verificar enlace",
+        sub: "Comprobar el estado de los LEDs del puerto de red del PC.",
+        cmd: "revisar LEDs",
+        salida: salidaLeds,
+        pregunta: "¿Qué indica el estado de los LEDs?",
+        opciones: [
+          { t: "El enlace físico está establecido: la Capa 1 está operativa.", ok: ledsOk,
+            fb: "Los LEDs apagados indican ausencia de enlace eléctrico. No puede afirmarse que la Capa 1 esté bien." },
+          { t: "No hay enlace físico: cable cortado o mal crimpeado, conector flojo o puerto muerto (Capa 1).", ok: !ledsOk,
+            fb: "Los LEDs encendidos y parpadeando confirman que existe enlace físico. La Capa 1 está funcionando." }
+        ]
+      },
+      {
+        titulo: "Capa Lógica Local · ipconfig",
+        sub: "Obtener la configuración IP asignada al equipo.",
+        cmd: "ipconfig /all",
+        salida: salidaIp,
+        pregunta: "¿Qué conclusión saca de la dirección IP obtenida?",
+        opciones: [
+          { t: "Es una IP APIPA (169.254.x.x): el cliente no obtuvo respuesta del servidor DHCP.", ok: apipa,
+            fb: "La dirección obtenida es 192.168.1.x con máscara /24: es una IP privada válida asignada correctamente." },
+          { t: "Es una IP privada válida dentro de la subred 192.168.1.0/24: el DHCP funcionó correctamente.", ok: !apipa,
+            fb: "El rango 169.254.0.0/16 es APIPA: el sistema se autoasignó una dirección porque el DHCP no respondió." }
+        ]
+      },
+      {
+        titulo: "Capa de Red · Ping al Gateway",
+        sub: "Verificar la comunicación con la puerta de enlace (router local).",
+        cmd: "ping 192.168.1.1",
+        salida: salidaGw,
+        pregunta: "¿Qué significa este resultado?",
+        opciones: [
+          { t: "La LAN interna está sana: el PC alcanza su router y el problema está más allá del gateway.", ok: gwOk,
+            fb: "No hubo respuesta del gateway: la red local está rota (router apagado, VLAN incorrecta o IP/máscara mal configurada)." },
+          { t: "No hay respuesta del gateway: la red LAN interna está rota (router apagado, VLAN incorrecta o IP/máscara mal configurada).", ok: !gwOk,
+            fb: "El gateway respondió a los 4 paquetes: la comunicación dentro de la LAN funciona correctamente." }
+        ]
+      },
+      {
+        titulo: "Salida WAN / DNS · Ping externo",
+        sub: "Verificar si existe salida física hacia Internet.",
+        cmd: "ping 8.8.8.8",
+        salida: salidaWan,
+        pregunta: "¿Dónde reside el problema entonces?",
+        opciones: [
+          { t: "Hay salida física a Internet: el problema reside en el servidor DNS (no resuelve nombres de dominio).", ok: wanOk,
+            fb: "Sin respuesta desde 8.8.8.8 no hay salida a Internet: la falla está en el gateway, en la WAN o en la configuración IP del equipo." },
+          { t: "No hay salida a Internet: la falla está en el gateway, en la WAN o en la configuración IP del equipo.", ok: !wanOk,
+            fb: "El ping externo respondió: el router tiene salida física a Internet y el problema es de resolución DNS." }
+        ]
+      }
+    ];
+  }
+
+  /* =========================================================
+     FLUJO · IDENTIFICACIÓN
+  ========================================================= */
+  const secIdent   = $("#secIdent");
+  const secM1      = $("#secM1");
+  const secM2      = $("#secM2");
+  const secInforme = $("#secInforme");
+
+  $("#btnComenzar").addEventListener("click", function () {
+    const nombre  = $("#inNombre").value.trim();
+    const curso   = $("#inCurso").value.trim();
+    const materia = $("#inMateria").value.trim() || "Hardware II";
+    const fb      = $("#fbIdent");
+
+    if (nombre.length < 3 || curso.length < 2) {
+      fb.className = "fb bad";
+      fb.style.display = "block";
+      fb.textContent = "⚠️ Completá Nombre y Apellido (mínimo 3 caracteres) y Curso y División.";
+      return;
+    }
+
+    fb.style.display = "none";
+    state.alumno.nombre  = nombre;
+    state.alumno.curso   = curso;
+    state.alumno.materia = materia;
+    state.alumno.inicio  = new Date();
+
+    secIdent.classList.add("locked");
+    secM1.classList.remove("locked");
+    secM1.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  /* =========================================================
+     MISIÓN 1
+  ========================================================= */
+  function iniciarM1() {
+    state.m1.orden = shuffle(CASOS_M1);
+    state.m1.resultados = [];
+    state.m1.completa = false;
+    const cont = $("#m1casos");
+    cont.innerHTML = "";
+    $("#fbM1").style.display = "none";
+
+    state.m1.orden.forEach(function (caso, idx) {
+      const card = document.createElement("div");
+      card.className = "caso";
+      card.dataset.done = "0";
+      card.dataset.fallo = "0";
+      card.innerHTML =
+        '<span class="tag">CASO ' + (idx + 1) + '</span>' +
+        '<p class="caso-txt">' + escHtml(caso.escenario) + '</p>' +
+        '<div class="opts"></div>' +
+        '<div class="fb"></div>';
+
+      const opts = card.querySelector(".opts");
+      shuffle(caso.opciones).forEach(function (op) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn btn-opt";
+        b.textContent = op.t;
+        b.addEventListener("click", function () {
+          responderM1(caso, op, b, card);
+        });
+        opts.appendChild(b);
+      });
+
+      cont.appendChild(card);
+    });
+  }
+
+  function responderM1(caso, op, btn, card) {
+    if (card.dataset.done === "1") return;
+    const fb = card.querySelector(".fb");
+
+    if (op.ok) {
+      const huboFallo = card.dataset.fallo === "1";
+      card.dataset.done = "1";
+      card.classList.add("ok");
+      btn.classList.add("ok");
+      $$(".btn-opt", card).forEach(function (b) { b.disabled = true; });
+      fb.className = "fb ok";
+      fb.textContent = "✅ " + op.fb;
+
+      state.m1.resultados.push({
+        escenario: caso.escenario,
+        elegida: op.t,
+        desempeno: huboFallo ? "Correcto tras reintento" : "Correcto al primer intento"
+      });
+
+      if (state.m1.resultados.length === state.m1.orden.length) {
+        state.m1.completa = true;
+        $("#fbM1").style.display = "block";
+        actualizarChecklist();
+        secM2.classList.remove("locked");
+        iniciarM2();
+        setTimeout(function () {
+          secM2.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 450);
+      }
+    } else {
+      card.dataset.fallo = "1";
+      btn.classList.add("bad");
+      btn.disabled = true;
+      fb.className = "fb bad";
+      fb.textContent = "❌ " + op.fb;
+    }
+  }
+
+  /* =========================================================
+     MISIÓN 2
+  ========================================================= */
+  function iniciarM2() {
+    const sc = ESCENARIOS_M2[Math.floor(Math.random() * ESCENARIOS_M2.length)];
+    state.m2.escenario = sc;
+    state.m2.completa = false;
+    state.m2.pasos = getPasos(sc).map(function (p) {
+      return {
+        titulo: p.titulo,
+        sub: p.sub,
+        cmd: p.cmd,
+        salida: p.salida,
+        pregunta: p.pregunta,
+        opciones: p.opciones,
+        ejecutado: false,
+        hecho: false,
+        intentos: 0,
+        eleccion: ""
+      };
+    });
+
+    $("#m2Contexto").textContent = "📋 Contexto del ticket: " + sc.contexto;
+    $("#fbM2").style.display = "none";
+
+    const cont = $("#m2pasos");
+    cont.innerHTML = "";
+
+    state.m2.pasos.forEach(function (p, i) {
+      const d = document.createElement("div");
+      d.className = "paso";
+      d.innerHTML =
+        '<div class="paso-head">' +
+          '<span class="paso-num">' + (i + 1) + '</span>' +
+          '<div class="paso-t">' +
+            '<h4>' + escHtml(p.titulo) + '</h4>' +
+            '<p>' + escHtml(p.sub) + '</p>' +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-exec"' + (i === 0 ? "" : " disabled") + '>' +
+          '&gt;_ Ejecutar: ' + escHtml(p.cmd) +
+        '</button>' +
+        '<pre class="term" hidden></pre>' +
+        '<div class="pregunta" hidden></div>';
+
+      const btnExec = d.querySelector(".btn-exec");
+      btnExec.addEventListener("click", function () {
+        ejecutarPaso(i, d, btnExec);
+      });
+
+      cont.appendChild(d);
+    });
+  }
+
+  function ejecutarPaso(i, contenedor, btn) {
+    const p = state.m2.pasos[i];
+    if (p.ejecutado) return;
+    p.ejecutado = true;
+
+    btn.disabled = true;
+    btn.style.display = "none";
+
+    const term = contenedor.querySelector(".term");
+    term.hidden = false;
+    term.textContent = p.salida;
+
+    const preg = contenedor.querySelector(".pregunta");
+    preg.hidden = false;
+    preg.innerHTML =
+      '<p class="q">' + escHtml(p.pregunta) + '</p>' +
+      '<div class="opts"></div>' +
+      '<div class="fb"></div>';
+
+    const opts = preg.querySelector(".opts");
+    shuffle(p.opciones).forEach(function (op) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn btn-opt";
+      b.textContent = op.t;
+      b.addEventListener("click", function () {
+        responderPaso(i, op, b, contenedor);
+      });
+      opts.appendChild(b);
+    });
+  }
+
+  function responderPaso(i, op, btn, contenedor) {
+    const p = state.m2.pasos[i];
+    if (p.hecho) return;
+
+    const fb = contenedor.querySelector(".pregunta .fb");
+
+    if (op.ok) {
+      p.hecho = true;
+      p.intentos += 1;
+      p.eleccion = op.t;
+
+      btn.classList.add("ok");
+      $$(".btn-opt", contenedor).forEach(function (b) { b.disabled = true; });
+      fb.className = "fb ok";
+      fb.textContent = "✅ Interpretación correcta.";
+      contenedor.classList.add("ok");
+
+      const todos = $$("#m2pasos .paso");
+      const siguiente = todos[i + 1];
+
+      if (siguiente) {
+        const nb = siguiente.querySelector(".btn-exec");
+        nb.disabled = false;
+        setTimeout(function () {
+          siguiente.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 260);
+      } else {
+        state.m2.completa = true;
+        $("#fbM2").style.display = "block";
+        actualizarChecklist();
+        secInforme.classList.remove("locked");
+        setTimeout(function () {
+          secInforme.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 500);
+      }
+    } else {
+      p.intentos += 1;
+      btn.disabled = true;
+      btn.classList.add("bad");
+      fb.className = "fb bad";
+      fb.textContent = "❌ " + (op.fb || "Interpretación incorrecta. Volvé a leer la salida de la terminal.");
+    }
+  }
+
+  /* =========================================================
+     INFORME · CONTADOR DE PALABRAS Y BLOQUEO
+  ========================================================= */
+  const txtInforme = $("#txtInforme");
+  const wcPill     = $("#wcPill");
+  const btnDesc    = $("#btnDescargar");
+
+  function actualizarChecklist() {
+    setCheck("#ck1", state.m1.completa);
+    setCheck("#ck2", state.m2.completa);
+    setCheck("#ck3", contarPalabras(txtInforme.value) >= 20);
+  }
+
+  function setCheck(sel, ok) {
+    const li = $(sel);
+    const st = li.querySelector(".st");
+    if (ok) {
+      li.classList.add("done");
+      st.classList.add("si");
+      st.classList.remove("no");
+      st.textContent = "✓";
+    } else {
+      li.classList.remove("done");
+      st.classList.add("no");
+      st.classList.remove("si");
+      st.textContent = "✕";
+    }
+  }
+
+  function actualizarEstadoInforme() {
+    const palabras = contarPalabras(txtInforme.value);
+    state.informe = txtInforme.value;
+
+    wcPill.textContent = palabras + " / 20 palabras";
+    if (palabras >= 20) {
+      wcPill.classList.add("ok");
+      wcPill.classList.remove("bad");
+    } else {
+      wcPill.classList.add("bad");
+      wcPill.classList.remove("ok");
+    }
+
+    actualizarChecklist();
+
+    const listo = state.m1.completa && state.m2.completa && palabras >= 20;
+    btnDesc.disabled = !listo;
+  }
+
+  txtInforme.addEventListener("input", actualizarEstadoInforme);
+
+  /* =========================================================
+     GENERACIÓN DEL ARCHIVO .DOC (CLIENT-SIDE)
+  ========================================================= */
+  function generarDoc() {
+    const f = new Date();
+    const fechaTxt = f.toLocaleDateString("es-AR") + " a las " + f.toLocaleTimeString("es-AR");
+    const idVerif = "HW2-" + f.getTime().toString(36).toUpperCase() + "-" +
+                    Math.random().toString(36).slice(2, 6).toUpperCase();
+
+    const filasM1 = state.m1.resultados.map(function (r, i) {
+      return '<tr>' +
+        '<td style="border:1px solid #999;padding:6px;text-align:center;">' + (i + 1) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(r.escenario) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(r.elegida) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(r.desempeno) + '</td>' +
+        '</tr>';
+    }).join("");
+
+    const filasM2 = state.m2.pasos.map(function (p, i) {
+      return '<tr>' +
+        '<td style="border:1px solid #999;padding:6px;text-align:center;">' + (i + 1) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(p.titulo) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(p.cmd) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;">' + escHtml(p.eleccion) + '</td>' +
+        '<td style="border:1px solid #999;padding:6px;text-align:center;">' + (p.hecho ? "OK" : "—") + '</td>' +
+        '</tr>';
+    }).join("");
+
+    const informeHtml = escHtml(state.informe).replace(/\n/g, "<br>");
+    const palabras = contarPalabras(state.informe);
+
+    const cuerpo =
+      '<h1 style="font-size:16pt;color:#0f172a;margin:0 0 2px;">REPORTE TÉCNICO DE PRÁCTICA DE LABORATORIO</h1>' +
+      '<h2 style="font-size:13pt;color:#0e7490;margin:0 0 16px;font-weight:600;">HARDWARE II — REDES LOCALES Y CONECTIVIDAD</h2>' +
+      '<hr style="border:none;border-top:2px solid #22c884;margin:0 0 16px;">' +
+
+      '<h3 style="font-size:12pt;color:#0f172a;margin:18px 0 8px;">1. DATOS DEL ESTUDIANTE</h3>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:10.5pt;">' +
+        '<tr><td style="border:1px solid #999;padding:6px;width:34%;background:#f1f5f9;"><b>Nombre y Apellido</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">' + escHtml(state.alumno.nombre) + '</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>Curso y División</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">' + escHtml(state.alumno.curso) + '</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>Materia</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">' + escHtml(state.alumno.materia) + '</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>Fecha y hora de finalización</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">' + fechaTxt + '</td></tr>' +
+      '</table>' +
+
+      '<h3 style="font-size:12pt;color:#0f172a;margin:22px 0 8px;">2. MISIÓN 1 — SELECCIÓN DE MEDIOS FÍSICOS (CAPA 1)</h3>' +
+      '<p style="font-size:10.5pt;margin:0 0 8px;">Resultado: <b>' + state.m1.resultados.length + ' de ' +
+        state.m1.orden.length + ' escenarios resueltos correctamente.</b></p>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:9.5pt;">' +
+        '<tr style="background:#e2e8f0;">' +
+          '<th style="border:1px solid #999;padding:6px;">#</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Escenario</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Medio seleccionado</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Desempeño</th>' +
+        '</tr>' + filasM1 +
+      '</table>' +
+
+      '<h3 style="font-size:12pt;color:#0f172a;margin:22px 0 8px;">3. MISIÓN 2 — RESULTADOS DE PRUEBAS DE DIAGNÓSTICO</h3>' +
+      '<p style="font-size:10.5pt;margin:0 0 8px;">Ticket: <i>«PC local sin salida a Internet»</i> — Metodología OSI de abajo hacia arriba (Físico → Enlace → Red).</p>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:9.5pt;">' +
+        '<tr style="background:#e2e8f0;">' +
+          '<th style="border:1px solid #999;padding:6px;">Paso</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Prueba</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Comando</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Interpretación del alumno</th>' +
+          '<th style="border:1px solid #999;padding:6px;">Estado</th>' +
+        '</tr>' + filasM2 +
+      '</table>' +
+
+      '<h3 style="font-size:12pt;color:#0f172a;margin:22px 0 8px;">4. FUNDAMENTACIÓN Y DIAGNÓSTICO DEL ALUMNO</h3>' +
+      '<div style="border:1px solid #999;padding:12px;font-size:10.5pt;line-height:1.6;min-height:90px;">' +
+        informeHtml +
+      '</div>' +
+      '<p style="font-size:9pt;color:#555;margin:6px 0 0;">Extensión del informe: ' + palabras + ' palabras.</p>' +
+
+      '<h3 style="font-size:12pt;color:#0f172a;margin:22px 0 8px;">5. VERIFICACIÓN DE COMPLETITUD</h3>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:9.5pt;">' +
+        '<tr><td style="border:1px solid #999;padding:6px;width:38%;background:#f1f5f9;"><b>Misión 1</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">COMPLETADA</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>Misión 2</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">COMPLETADA</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>Informe (≥ 20 palabras)</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;">CUMPLIDO (' + palabras + ' palabras)</td></tr>' +
+        '<tr><td style="border:1px solid #999;padding:6px;background:#f1f5f9;"><b>ID de verificación</b></td>' +
+            '<td style="border:1px solid #999;padding:6px;font-family:Consolas,monospace;">' + idVerif + '</td></tr>' +
+      '</table>' +
+      '<p style="font-size:9pt;color:#555;margin-top:18px;border-top:1px solid #ccc;padding-top:10px;">' +
+        'Documento generado automáticamente por el Simulador «El Técnico de Guardia» — Hardware II. ' +
+        'La firma digital implícita corresponde al ID de verificación indicado y al registro de hora del dispositivo del estudiante.' +
+      '</p>';
+
+    const html =
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+      'xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">' +
+      '<title>Reporte Técnico - Hardware II</title>' +
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>' +
+      '<w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+      '<style>@page{size:A4;margin:2cm;} body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111;}</style>' +
+      '</head><body>' + cuerpo + '</body></html>';
+
+    const blob = new Blob(["\ufeff" + html], { type: "application/msword" });
+
+    const nombreArchivo = "Informe_HardwareII_" +
+      state.alumno.nombre.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_+|_+$/g, "").slice(0, 40) + ".doc";
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivo;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+      if (a.parentNode) a.parentNode.removeChild(a);
+    }, 2000);
+  }
+
+  btnDesc.addEventListener("click", function () {
+    if (btnDesc.disabled) return;
+    generarDoc();
+  });
+
+  /* =========================================================
+     ARRANQUE
+  ========================================================= */
+  iniciarM1();
+  actualizarEstadoInforme();
+})();
+</script>
+</body>
+</html>
